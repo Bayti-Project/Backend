@@ -20,7 +20,7 @@ class RegisterView(APIView):
                         'id': user.id,
                         'full_name': user.full_name,
                         'email': user.email,
-                        'phone': user.phone,
+                        'phone_number': user.phone_number,
                         'role': user.role,
                         'account_type': user.account_type,
                     }

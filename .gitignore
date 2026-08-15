@@ -1,3 +1,9 @@
 venv/
-db.sqlite3
 __pycache__/
+# Database
+db.sqlite3
+db_backup.sqlite3
+
+# User uploaded files
+profile_images/
+media/

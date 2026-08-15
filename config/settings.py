@@ -124,4 +124,3 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # بدنا نخلي django يعرف انو ال user هو المستخدم الاساسي
-AUTH_USER_MODEL = 'accounts.User'

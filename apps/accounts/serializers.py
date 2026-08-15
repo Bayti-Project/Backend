@@ -5,6 +5,9 @@ from .models import User
 
 
 class RegisterSerializer(serializers.ModelSerializer):
+    role = serializers.ChoiceField(
+        choices=[('owner', 'مالك عقار'), ('tenant', 'مستأجر')]
+    )
     confirm_password = serializers.CharField(
         write_only=True,
         required=True
@@ -15,7 +18,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         fields = [
             'full_name',
             'email',
-            'phone',
+            'phone_number',
             'password',
             'confirm_password',
             'role',
@@ -33,10 +36,7 @@ class RegisterSerializer(serializers.ModelSerializer):
             'email': {
                 'required': True,
             },
-            'phone': {
-                'required': True,
-            },
-            'role': {
+            'phone_number': {
                 'required': True,
             },
             'account_type': {
@@ -51,8 +51,8 @@ class RegisterSerializer(serializers.ModelSerializer):
             )
         return value
 
-    def validate_phone(self, value):
-        if User.objects.filter(phone=value).exists():
+    def validate_phone_number(self, value):
+        if User.objects.filter(phone_number=value).exists():
             raise serializers.ValidationError(
                 "This phone number is already registered."
             )
