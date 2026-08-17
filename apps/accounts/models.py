@@ -48,6 +48,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     full_name = models.CharField(max_length=255)
     email = models.EmailField(unique=True)
     phone_number = models.CharField(max_length=20, unique=True)
+    whatsapp_number = models.CharField(max_length=20, blank=True, null=True)
     profile_image = models.ImageField(upload_to='profile_images/', null=True, blank=True)
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='tenant')
     account_type = models.CharField(max_length=15, choices=ACCOUNT_TYPE_CHOICES, default='individual')
