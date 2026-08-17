@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-gujh9n@&*0itf_1rfn7z!443t+z4+i^7)$hks=*%45-nrzh+hy
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['bayti-backend-sprint1.onrender.com']
 
 
 # Application definition
