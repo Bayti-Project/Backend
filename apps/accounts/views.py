@@ -4,15 +4,13 @@ from rest_framework.views import APIView
 
 
 from .serializers import RegisterSerializer
-
-
 from rest_framework_simplejwt.tokens import RefreshToken
-
 from .serializers import LoginSerializer
-
 from rest_framework.permissions import IsAuthenticated
-
 from .serializers import ProfileSerializer
+from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
+from .serializers import ChangePasswordSerializer
+
 
 class RegisterView(APIView):
 
@@ -87,6 +85,34 @@ class ProfileView(APIView):
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
+
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+class ChangePasswordView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request):
+        serializer = ChangePasswordSerializer(
+            data=request.data,
+            context={'request': request}
+        )
+
+        if serializer.is_valid():
+            user = request.user
+            user.set_password(serializer.validated_data['new_password'])
+            user.save()
+
+            tokens = OutstandingToken.objects.filter(user=user)
+            for token in tokens:
+                BlacklistedToken.objects.get_or_create(token=token)
+
+            return Response(
+                {'message': 'Password updated successfully. Please log in again.'},
+                status=status.HTTP_200_OK
+            )
 
         return Response(
             serializer.errors,
