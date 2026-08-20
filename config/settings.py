@@ -40,6 +40,7 @@ INSTALLED_APPS = [
 
     'rest_framework',
     'apps.accounts.apps.AccountsConfig',
+    'apps.properties.apps.PropertiesConfig',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
@@ -146,3 +147,6 @@ CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^https://.*\.vercel\.app$",
     r"^http://localhost:\d+$",
 ]
+# Media files (uploaded images, etc.)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
