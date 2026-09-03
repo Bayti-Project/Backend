@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-gujh9n@&*0itf_1rfn7z!443t+z4+i^7)$hks=*%45-nrzh+hy
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['bayti-backend-sprint1.onrender.com']
+ALLOWED_HOSTS = ['bayti-backend-sprint1.onrender.com', '127.0.0.1', 'localhost']
 
 
 # Application definition
@@ -40,6 +40,7 @@ INSTALLED_APPS = [
 
     'rest_framework',
     'apps.accounts.apps.AccountsConfig',
+    'apps.properties.apps.PropertiesConfig',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
@@ -146,3 +147,6 @@ CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^https://.*\.vercel\.app$",
     r"^http://localhost:\d+$",
 ]
+# Media files (uploaded images, etc.)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
