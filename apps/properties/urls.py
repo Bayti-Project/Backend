@@ -1,8 +1,9 @@
 from django.urls import path
+from apps.properties.views import PropertyCreateView
 
 app_name = 'properties'
 
 urlpatterns = [
-    # Add Property -> سيُضاف في US-06
+   path('', PropertyCreateView.as_view(), name='property-create'),
     # Edit Property -> سيُضاف في US-07
 ]
