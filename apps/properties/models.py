@@ -151,6 +151,8 @@ class Property(models.Model):
         blank=True,
     )
     bedrooms = models.PositiveSmallIntegerField(null=True, blank=True)
+    bathrooms = models.PositiveSmallIntegerField(null=True, blank=True)
+    area_sqm = models.PositiveIntegerField(null=True, blank=True)
 
     has_solar = models.BooleanField(default=False)
     has_generator_line = models.BooleanField(default=False)
