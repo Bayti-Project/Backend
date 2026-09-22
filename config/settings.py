@@ -43,9 +43,11 @@ INSTALLED_APPS = [
     'rest_framework',
     'apps.accounts.apps.AccountsConfig',
     'apps.properties.apps.PropertiesConfig',
+    'apps.interest_requests.apps.InterestRequestsConfig',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
+    
 ]
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
