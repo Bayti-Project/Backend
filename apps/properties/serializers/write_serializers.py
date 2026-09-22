@@ -8,6 +8,20 @@ class PropertyImageSerializer(serializers.ModelSerializer):
         model = PropertyImage
         fields = ['id', 'image']
 
+PROPERTY_EXTRA_FIELDS = [
+    'governorate',
+    'area',
+    'neighborhood',
+    'property_type',
+    'bedrooms',
+    'bathrooms',
+    'area_sqm',
+    'has_solar',
+    'has_generator_line',
+    'has_main_grid',
+    'has_water_tank',
+    'has_private_well',
+]
 
 class PropertyCreateSerializer(serializers.ModelSerializer):
     images = serializers.ListField(
@@ -23,7 +37,7 @@ class PropertyCreateSerializer(serializers.ModelSerializer):
             'id', 'title', 'description', 'price', 'address',
             'status', 'owner', 'images', 'uploaded_images',
             'created_at', 'updated_at',
-        ]
+        ]+ PROPERTY_EXTRA_FIELDS
         read_only_fields = ['id', 'owner', 'status', 'created_at', 'updated_at']
 
     def validate_price(self, value):
@@ -59,7 +73,7 @@ class PropertyEditSerializer(serializers.ModelSerializer):
             'id', 'title', 'description', 'price', 'address',
             'status', 'owner', 'images', 'image_ids_to_delete',
             'uploaded_images', 'created_at', 'updated_at',
-        ]
+        ]+ PROPERTY_EXTRA_FIELDS
         read_only_fields = ['id', 'owner', 'status', 'created_at', 'updated_at']
 
     def validate_price(self, value):
