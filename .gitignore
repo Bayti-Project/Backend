@@ -1,5 +1,10 @@
 venv/
 __pycache__/
+
+# Environment variables
+.env
+*.env
+
 # Database
 db.sqlite3
 db_backup.sqlite3
