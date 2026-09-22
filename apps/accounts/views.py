@@ -118,9 +118,9 @@ class ChangePasswordView(APIView):
             status=status.HTTP_400_BAD_REQUEST
         )
 class LogoutView(APIView):
-        permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
-def post(self, request):
+    def post(self, request):
         refresh_token = request.data.get('refresh')
 
         if not refresh_token:
