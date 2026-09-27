@@ -3,6 +3,7 @@ from django.urls import path
 from apps.interest_requests.views import (
     InterestRequestCreateView,
     InterestRequestStatusView,
+    OwnerInterestRequestListView,
 )
 
 app_name = 'interest_requests'
@@ -19,4 +20,9 @@ urlpatterns = [
             name='interest-request-status',
             
         ),
+    path(
+        'owner/interest-requests',
+        OwnerInterestRequestListView.as_view(),
+        name='owner-interest-request-list',
+    ),
 ]

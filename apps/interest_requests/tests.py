@@ -234,3 +234,125 @@ class ManageInterestRequestTestCase(APITestCase):
         response = self.client.put(self.get_url(99999), {'status': 'approved'}, format='json')
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+class OwnerInterestRequestListTestCase(APITestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user(
+            email='owner@example.com',
+            full_name='Owner One',
+            password='testpass123',
+            phone_number='0599000001',
+            role='owner',
+        )
+        self.other_owner = User.objects.create_user(
+            email='owner2@example.com',
+            full_name='Owner Two',
+            password='testpass123',
+            phone_number='0599000003',
+            role='owner',
+        )
+        self.tenant = User.objects.create_user(
+            email='tenant@example.com',
+            full_name='Tenant One',
+            password='testpass123',
+            phone_number='0599000002',
+            role='tenant',
+        )
+        self.tenant2 = User.objects.create_user(
+            email='tenant2@example.com',
+            full_name='Tenant Two',
+            password='testpass123',
+            phone_number='0599000004',
+            role='tenant',
+        )
+        self.property = Property.objects.create(
+            title='Apartment in Gaza City',
+            description='Nice apartment',
+            price=Decimal('500'),
+            address='Gaza',
+            owner=self.owner,
+        )
+        self.other_property = Property.objects.create(
+            title='Villa owned by another owner',
+            description='Villa',
+            price=Decimal('900'),
+            address='Gaza',
+            owner=self.other_owner,
+        )
+        self.pending_request = InterestRequest.objects.create(
+            tenant=self.tenant,
+            property=self.property,
+            owner=self.owner,
+        )
+        self.approved_request = InterestRequest.objects.create(
+            tenant=self.tenant2,
+            property=self.property,
+            owner=self.owner,
+            status=InterestRequest.STATUS_APPROVED,
+        )
+        self.other_owner_request = InterestRequest.objects.create(
+            tenant=self.tenant,
+            property=self.other_property,
+            owner=self.other_owner,
+        )
+
+    def get_url(self):
+        return reverse('interest_requests:owner-interest-request-list')
+
+    def test_owner_sees_only_their_requests(self):
+        self.client.force_authenticate(user=self.owner)
+        response = self.client.get(self.get_url())
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        ids = [item['id'] for item in response.data['results']]
+        self.assertIn(self.pending_request.id, ids)
+        self.assertIn(self.approved_request.id, ids)
+        self.assertNotIn(self.other_owner_request.id, ids)
+        self.assertEqual(response.data['count'], 2)
+
+    def test_filter_by_pending(self):
+        self.client.force_authenticate(user=self.owner)
+        response = self.client.get(self.get_url(), {'status': 'pending'})
+
+        ids = [item['id'] for item in response.data['results']]
+        self.assertEqual(ids, [self.pending_request.id])
+
+    def test_filter_by_approved(self):
+        self.client.force_authenticate(user=self.owner)
+        response = self.client.get(self.get_url(), {'status': 'approved'})
+
+        ids = [item['id'] for item in response.data['results']]
+        self.assertEqual(ids, [self.approved_request.id])
+
+    def test_filter_by_rejected_empty(self):
+        self.client.force_authenticate(user=self.owner)
+        response = self.client.get(self.get_url(), {'status': 'rejected'})
+
+        self.assertEqual(response.data['results'], [])
+        self.assertEqual(response.data['count'], 0)
+
+    def test_owner_with_no_requests(self):
+        empty_owner = User.objects.create_user(
+            email='owner3@example.com',
+            full_name='Owner Three',
+            password='testpass123',
+            phone_number='0599000005',
+            role='owner',
+        )
+        self.client.force_authenticate(user=empty_owner)
+        response = self.client.get(self.get_url())
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['results'], [])
+        self.assertEqual(response.data['count'], 0)
+
+    def test_owner_cannot_see_another_owners_requests(self):
+        self.client.force_authenticate(user=self.other_owner)
+        response = self.client.get(self.get_url())
+
+        ids = [item['id'] for item in response.data['results']]
+        self.assertEqual(ids, [self.other_owner_request.id])
+
+    def test_unauthenticated_user_gets_401(self):
+        response = self.client.get(self.get_url())
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)

@@ -56,3 +56,27 @@ class InterestRequestStatusView(generics.UpdateAPIView):
     serializer_class = InterestRequestStatusSerializer
     permission_classes = [permissions.IsAuthenticated, IsPropertyOwner]
     http_method_names = ['put']
+
+class OwnerInterestRequestListView(generics.ListAPIView):
+    serializer_class = InterestRequestSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def list(self, request, *args, **kwargs):
+        queryset = InterestRequest.objects.filter(owner=request.user)
+
+        status_param = request.query_params.get('status')
+        if status_param:
+            valid_statuses = [
+                InterestRequest.STATUS_PENDING,
+                InterestRequest.STATUS_APPROVED,
+                InterestRequest.STATUS_REJECTED,
+            ]
+            if status_param not in valid_statuses:
+                raise ValidationError(
+                    {'detail': 'Status must be pending, approved, or rejected.'}
+                )
+            queryset = queryset.filter(status=status_param)
+
+        queryset = queryset.order_by('-created_at')
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({'results': serializer.data, 'count': queryset.count()})
