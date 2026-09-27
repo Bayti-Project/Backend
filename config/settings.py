@@ -43,9 +43,10 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'django.contrib.staticfiles',
     "cloudinary_storage",
     "cloudinary",
-    'django.contrib.staticfiles',
+    
 
     'rest_framework',
     'apps.accounts.apps.AccountsConfig',
@@ -171,3 +172,4 @@ STORAGES = {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },
 }
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
