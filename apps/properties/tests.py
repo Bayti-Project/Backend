@@ -5,10 +5,156 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from apps.properties.models import Property
+from apps.properties.models import Property  
 
 User = get_user_model()
 
+class PropertyFeaturesTestCase(APITestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user(
+            email='features_owner@example.com',
+            full_name='Features Owner',
+            password='testpass123',
+            phone_number='0599100001',
+        )
+        self.create_url = reverse('properties:property-create')
+
+    def base_payload(self):
+        return {
+            'title': 'Feature Test Property',
+            'description': 'Testing features',
+            'price': '1000',
+            'address': 'Gaza',
+        }
+
+    # TEST 1: create without any features
+    def test_create_without_features(self):
+        self.client.force_authenticate(user=self.owner)
+        response = self.client.post(self.create_url, self.base_payload(), format='multipart')
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        prop = Property.objects.get(id=response.data['id'])
+        self.assertFalse(prop.has_solar)
+        self.assertFalse(prop.is_furnished)
+        self.assertFalse(prop.has_gym)
+
+    # TEST 2: create with old features only
+    def test_create_with_old_features_only(self):
+        payload = self.base_payload()
+        payload.update({'has_solar': True, 'has_water_tank': True})
+        self.client.force_authenticate(user=self.owner)
+        response = self.client.post(self.create_url, payload, format='multipart')
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        prop = Property.objects.get(id=response.data['id'])
+        self.assertTrue(prop.has_solar)
+        self.assertTrue(prop.has_water_tank)
+        self.assertFalse(prop.is_furnished)
+
+    # TEST 3: create with new features only
+    def test_create_with_new_features_only(self):
+        payload = self.base_payload()
+        payload.update({'is_furnished': True, 'has_balcony': True})
+        self.client.force_authenticate(user=self.owner)
+        response = self.client.post(self.create_url, payload, format='multipart')
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        prop = Property.objects.get(id=response.data['id'])
+        self.assertTrue(prop.is_furnished)
+        self.assertTrue(prop.has_balcony)
+        self.assertFalse(prop.has_solar)
+
+    # TEST 4: create with all features (old + new)
+    def test_create_with_all_features(self):
+        payload = self.base_payload()
+        payload.update({
+            'has_solar': True,
+            'has_generator_line': True,
+            'has_main_grid': True,
+            'has_water_tank': True,
+            'has_private_well': True,
+            'is_furnished': True,
+            'has_elevator': True,
+            'has_balcony': True,
+            'has_parking': True,
+            'has_central_ac': True,
+            'has_shared_pool': True,
+            'has_gym': True,
+        })
+        self.client.force_authenticate(user=self.owner)
+        response = self.client.post(self.create_url, payload, format='multipart')
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        prop = Property.objects.get(id=response.data['id'])
+        for field in [
+            'has_solar', 'has_generator_line', 'has_main_grid',
+            'has_water_tank', 'has_private_well', 'is_furnished',
+            'has_elevator', 'has_balcony', 'has_parking',
+            'has_central_ac', 'has_shared_pool', 'has_gym',
+        ]:
+            self.assertTrue(getattr(prop, field), f'{field} should be True')
+
+    # TEST 5: GET property returns each feature with correct value
+    def test_get_property_returns_features_correctly(self):
+        prop = Property.objects.create(
+            title='Detail Feature Test',
+            description='desc',
+            price=Decimal('700'),
+            address='Gaza',
+            owner=self.owner,
+            has_solar=True,
+            has_balcony=True,
+            has_gym=False,
+        )
+        url = reverse('properties:property-detail', kwargs={'pk': prop.id})
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data['has_solar'])
+        self.assertTrue(response.data['has_balcony'])
+        self.assertFalse(response.data['has_gym'])
+        self.assertFalse(response.data['is_furnished'])
+
+    # TEST 6: property created before the new fields existed still works
+    def test_old_property_without_new_fields_still_works(self):
+        old_prop = Property.objects.create(
+            title='Old Property',
+            description='Created before feature migration (simulated)',
+            price=Decimal('300'),
+            address='Gaza',
+            owner=self.owner,
+        )
+        url = reverse('properties:property-detail', kwargs={'pk': old_prop.id})
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(response.data['is_furnished'])
+        self.assertFalse(response.data['has_elevator'])
+        self.assertFalse(response.data['has_gym'])
+
+    # TEST 7: search/list results also expose the features
+    def test_search_results_include_features(self):
+        Property.objects.create(
+            title='Searchable Feature Property',
+            description='desc',
+            price=Decimal('450'),
+            address='Gaza',
+            owner=self.owner,
+            status=Property.STATUS_AVAILABLE,
+            governorate=Property.GOVERNORATE_GAZA,
+            has_parking=True,
+            has_central_ac=True,
+        )
+        search_url = reverse('properties:property-search')
+        response = self.client.get(search_url, {'governorate': 'gaza'})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        results = response.data['results']
+        matching = [r for r in results if r['title'] == 'Searchable Feature Property']
+        self.assertEqual(len(matching), 1)
+        self.assertTrue(matching[0]['has_parking'])
+        self.assertTrue(matching[0]['has_central_ac'])
+        self.assertFalse(matching[0]['has_gym'])
 
 class PropertySearchTestCase(APITestCase):
     def setUp(self):

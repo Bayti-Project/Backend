@@ -21,6 +21,13 @@ PROPERTY_EXTRA_FIELDS = [
     'has_main_grid',
     'has_water_tank',
     'has_private_well',
+    'is_furnished',
+    'has_elevator',
+    'has_balcony',
+    'has_parking',
+    'has_central_ac',
+    'has_shared_pool',
+    'has_gym',
 ]
 
 class PropertyCreateSerializer(serializers.ModelSerializer):

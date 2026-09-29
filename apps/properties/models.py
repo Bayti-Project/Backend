@@ -159,7 +159,13 @@ class Property(models.Model):
     has_main_grid = models.BooleanField(default=False)
     has_water_tank = models.BooleanField(default=False)
     has_private_well = models.BooleanField(default=False)
-
+    is_furnished = models.BooleanField(default=False)
+    has_elevator = models.BooleanField(default=False)
+    has_balcony = models.BooleanField(default=False)
+    has_parking = models.BooleanField(default=False)
+    has_central_ac = models.BooleanField(default=False)
+    has_shared_pool = models.BooleanField(default=False)
+    has_gym = models.BooleanField(default=False)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

@@ -12,4 +12,5 @@ db_backup.sqlite3
 # User uploaded files
 profile_images/
 media/
+staticfiles/
 .env
