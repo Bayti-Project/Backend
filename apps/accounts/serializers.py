@@ -111,9 +111,10 @@ class ProfileSerializer(serializers.ModelSerializer):
             'profile_image',
             'role',
             'account_type',
+            'is_verified',
             'created_at',
         ]
-        read_only_fields = ['id', 'email', 'role', 'account_type', 'created_at']
+        read_only_fields = ['id', 'email', 'role', 'account_type','is_verified', 'created_at']
 
 class ChangePasswordSerializer(serializers.Serializer):
     current_password = serializers.CharField(write_only=True)

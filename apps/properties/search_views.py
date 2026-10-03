@@ -82,3 +82,6 @@ class PropertySearchView(generics.ListAPIView):
 
         suggestions = get_nearby_areas(area) if area else []
         return Response({'results': [], 'suggestions': suggestions})
+
+class TenantHomeView(PropertySearchView):
+    permission_classes = [permissions.IsAuthenticated]

@@ -9,7 +9,7 @@ from apps.properties.lifecycle_views import PropertyDeleteView
 class PropertyDetailView(generics.RetrieveAPIView):
     queryset = Property.objects.all()
     serializer_class = PropertyDetailSerializer
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
     def dispatch(self, request, *args, **kwargs):
         if request.method == 'GET':
