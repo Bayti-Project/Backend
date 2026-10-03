@@ -11,6 +11,7 @@ urlpatterns = [
     path('api/properties/', include('apps.saved_properties.urls')),
     path('api/users/', include('apps.saved_properties.user_urls')),
     path('api/notifications/', include('notifications.urls')),
+    path('api/', include('apps.interest_requests.urls')),
 ]
 
 
