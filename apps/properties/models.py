@@ -132,6 +132,7 @@ class Property(models.Model):
         choices=STATUS_CHOICES,
         default=STATUS_AVAILABLE,
     )
+    interest_enabled = models.BooleanField(default=True)
 
     governorate = models.CharField(
         max_length=20,
