@@ -99,3 +99,22 @@ class SavedPropertiesListView(APIView):
             },
             status=status.HTTP_200_OK
         )
+
+class SharePropertyView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, pk):
+        property_obj = get_object_or_404(Property, pk=pk)
+
+        if property_obj.status == Property.STATUS_RENTED:
+            return Response(
+                {'message': 'This property is no longer available'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        return Response(
+            {
+                'link': f'https://bayti.ps/property/{property_obj.pk}'
+            },
+            status=status.HTTP_200_OK
+        )
