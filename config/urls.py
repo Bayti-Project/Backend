@@ -8,6 +8,13 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/auth/', include('apps.accounts.urls')),
     path('api/properties/', include('apps.properties.urls')),
+    path('api/properties/', include('apps.saved_properties.urls')),
+    path('api/users/', include('apps.saved_properties.user_urls')),
 ]
+
+
 if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(
+        settings.MEDIA_URL,
+        document_root=settings.MEDIA_ROOT
+    )
