@@ -5,6 +5,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from apps.interest_requests.models import InterestRequest
 from apps.properties.models import Property
 
 User = get_user_model()
@@ -230,3 +231,90 @@ class PropertySearchTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+# ---------- US-20 ----------
+
+class PropertyContactTestCase(APITestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user(
+            email='contact_owner@example.com',
+            full_name='Contact Owner',
+            password='testpass123',
+            phone_number='0599000011',
+        )
+
+        self.tenant = User.objects.create_user(
+            email='contact_tenant@example.com',
+            full_name='Contact Tenant',
+            password='testpass123',
+            phone_number='0599000022',
+        )
+
+        self.property = Property.objects.create(
+            title='Contact Test Property',
+            description='Property for contact tests',
+            price=Decimal('500'),
+            address='Gaza',
+            owner=self.owner,
+            status=Property.STATUS_AVAILABLE,
+            governorate=Property.GOVERNORATE_GAZA,
+            area='gaza_city',
+            property_type=Property.TYPE_APARTMENT,
+            bedrooms=2,
+            interest_enabled=True,
+        )
+
+        self.contact_url = reverse(
+            'properties:property-contact',
+            kwargs={'pk': self.property.id},
+        )
+
+    def test_approved_tenant_can_access_contact(self):
+        InterestRequest.objects.create(
+            tenant=self.tenant,
+            property=self.property,
+            owner=self.owner,
+            status=InterestRequest.STATUS_APPROVED,
+        )
+
+        self.client.force_authenticate(user=self.tenant)
+
+        response = self.client.get(self.contact_url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            response.data['phone_number'],
+            self.owner.phone_number,
+        )
+
+    def test_rejected_tenant_cannot_access_contact(self):
+        InterestRequest.objects.create(
+            tenant=self.tenant,
+            property=self.property,
+            owner=self.owner,
+            status=InterestRequest.STATUS_REJECTED,
+        )
+
+        self.client.force_authenticate(user=self.tenant)
+
+        response = self.client.get(self.contact_url)
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_contact_available_when_interest_is_disabled(self):
+        self.property.interest_enabled = False
+        self.property.save(update_fields=['interest_enabled'])
+
+        self.client.force_authenticate(user=self.tenant)
+
+        response = self.client.get(self.contact_url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            response.data['phone_number'],
+            self.owner.phone_number,
+        )
+
+    def test_unauthorized_user_cannot_access_contact(self):
+        response = self.client.get(self.contact_url)
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
