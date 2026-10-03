@@ -107,7 +107,9 @@ class PropertyFeaturesTestCase(APITestCase):
             has_gym=False,
         )
         url = reverse('properties:property-detail', kwargs={'pk': prop.id})
+        self.client.force_authenticate(user=self.owner)
         response = self.client.get(url)
+
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(response.data['has_solar'])
@@ -125,6 +127,7 @@ class PropertyFeaturesTestCase(APITestCase):
             owner=self.owner,
         )
         url = reverse('properties:property-detail', kwargs={'pk': old_prop.id})
+        self.client.force_authenticate(user=self.owner)
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
