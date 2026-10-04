@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'apps.properties.apps.PropertiesConfig',
     'apps.saved_properties',
     'apps.interest_requests.apps.InterestRequestsConfig',
+    'notifications',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
