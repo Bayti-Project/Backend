@@ -66,3 +66,38 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
+
+
+class SocialIdentity(models.Model):
+    PROVIDER_GOOGLE = 'google'
+
+    PROVIDER_CHOICES = (
+        (PROVIDER_GOOGLE, 'Google'),
+    )
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='social_identities',
+    )
+    provider = models.CharField(
+        max_length=20,
+        choices=PROVIDER_CHOICES,
+    )
+    provider_user_id = models.CharField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['provider', 'provider_user_id'],
+                name='unique_social_identity_provider_user_id',
+            ),
+            models.UniqueConstraint(
+                fields=['user', 'provider'],
+                name='unique_social_identity_user_provider',
+            ),
+        ]
+
+    def __str__(self):
+        return f'{self.provider}:{self.provider_user_id}'
