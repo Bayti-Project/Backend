@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.db import models
+from django.db import models, transaction
 
 from apps.properties.models import Property
 
@@ -48,7 +48,7 @@ class InterestRequest(models.Model):
         max_length=30, choices=REJECTION_REASON_CHOICES, blank=True,
     )
     rejection_note = models.CharField(max_length=200, blank=True)
-    request_code = models.CharField(max_length=20, unique=True, blank=True)
+    request_code = models.CharField(max_length=20, unique=True, null=True, blank=True, editable=False,)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -61,10 +61,14 @@ class InterestRequest(models.Model):
         ]
     def save(self, *args, **kwargs):
         is_new = self.pk is None
-        super().save(*args, **kwargs)
-        if is_new and not self.request_code:
-            self.request_code = f'REQ-{self.pk:05d}'
-            super().save(update_fields=['request_code'])
+
+        with transaction.atomic():
+            super().save(*args, **kwargs)
+
+            if is_new and not self.request_code:
+              code = f'REQ-{self.pk:05d}'
+              type(self).objects.filter(pk=self.pk).update(request_code=code)
+              self.request_code = code
 
             
     def __str__(self):
