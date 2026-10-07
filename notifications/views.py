@@ -46,6 +46,13 @@ class NotificationListView(APIView):
             user=request.user
         ).order_by('-created_at')
 
+        filter_param = request.query_params.get('filter')
+
+        if filter_param == 'unread':
+            notifications = notifications.filter(is_read=False)
+        elif filter_param and filter_param != 'all':
+            notifications = notifications.filter(type=filter_param)
+
         serializer = NotificationSerializer(
             notifications,
             many=True
@@ -93,5 +100,20 @@ class NotificationReadStatusView(APIView):
 
         return Response(
             serializer.data,
+            status=status.HTTP_200_OK
+        )
+
+
+class MarkAllNotificationsReadView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def patch(self, request):
+        Notification.objects.filter(
+            user=request.user,
+            is_read=False,
+        ).update(is_read=True)
+
+        return Response(
+            {'message': 'All notifications marked as read.'},
             status=status.HTTP_200_OK
         )

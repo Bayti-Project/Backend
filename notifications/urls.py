@@ -4,6 +4,7 @@ from notifications.views import (
     CreateNotificationView,
     NotificationListView,
     NotificationReadStatusView,
+    MarkAllNotificationsReadView,
 )
 
 
@@ -12,6 +13,11 @@ urlpatterns = [
         'create/',
         CreateNotificationView.as_view(),
         name='create-notification',
+    ),
+    path(
+        'mark-all-read/',
+        MarkAllNotificationsReadView.as_view(),
+        name='mark-all-notifications-read',
     ),
     path(
         '',

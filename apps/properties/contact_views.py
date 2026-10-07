@@ -16,7 +16,8 @@ class PropertyContactView(APIView):
         if not property_obj.interest_enabled:
             return Response(
                 {
-                    'phone_number': property_obj.owner.phone_number
+                    'phone_number': property_obj.owner.phone_number,
+                    'whatsapp_number': property_obj.owner.whatsapp_number,
                 },
                 status=status.HTTP_200_OK
             )
@@ -37,7 +38,8 @@ class PropertyContactView(APIView):
 
         return Response(
             {
-                'phone_number': property_obj.owner.phone_number
+                'phone_number': property_obj.owner.phone_number,
+                'whatsapp_number': property_obj.owner.whatsapp_number,
             },
             status=status.HTTP_200_OK
         )

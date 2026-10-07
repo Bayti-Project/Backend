@@ -174,12 +174,18 @@ class ManageInterestRequestTestCase(APITestCase):
 
     def test_owner_can_reject_request(self):
         self.client.force_authenticate(user=self.owner)
-        response = self.client.put(self.get_url(), {'status': 'rejected'}, format='json')
+        response = self.client.put(
+            self.get_url(), {
+                'status': 'rejected',
+                'rejection_reason': 'property_unavailable',
+                },
+                  format='json',
+                  )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.interest_request.refresh_from_db()
         self.assertEqual(self.interest_request.status, 'rejected')
-
+        self.assertEqual(self.interest_request.rejection_reason, 'property_unavailable')
     def test_updated_at_changes_after_update(self):
         old_updated_at = self.interest_request.updated_at
         self.client.force_authenticate(user=self.owner)
@@ -234,6 +240,60 @@ class ManageInterestRequestTestCase(APITestCase):
         response = self.client.put(self.get_url(99999), {'status': 'approved'}, format='json')
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+    def test_reject_without_reason_is_rejected(self):
+        self.client.force_authenticate(user=self.owner)
+        response = self.client.put(
+            self.get_url(), {'status': 'rejected'}, format='json'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('rejection_reason', response.data)
+
+    def test_reject_with_invalid_reason_is_rejected(self):
+        self.client.force_authenticate(user=self.owner)
+        response = self.client.put(
+            self.get_url(),
+            {'status': 'rejected', 'rejection_reason': 'not_a_real_reason'},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_reject_with_reason_and_note(self):
+        self.client.force_authenticate(user=self.owner)
+        response = self.client.put(
+            self.get_url(),
+            {
+                'status': 'rejected',
+                'rejection_reason': 'payment_terms_not_compatible',
+                'rejection_note': 'Tenant offered below asking price.',
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['rejection_reason'], 'payment_terms_not_compatible')
+        self.assertEqual(
+            response.data['rejection_note'], 'Tenant offered below asking price.'
+        )
+
+    def test_approve_ignores_rejection_fields_if_sent(self):
+        self.client.force_authenticate(user=self.owner)
+        response = self.client.put(
+            self.get_url(),
+            {
+                'status': 'approved',
+                'rejection_reason': 'property_unavailable',
+                'rejection_note': 'should be ignored',
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.interest_request.refresh_from_db()
+        self.assertEqual(self.interest_request.status, 'approved')
+        self.assertEqual(self.interest_request.rejection_reason, '')
+        self.assertEqual(self.interest_request.rejection_note, '')
 
 class OwnerInterestRequestListTestCase(APITestCase):
     def setUp(self):
@@ -352,6 +412,114 @@ class OwnerInterestRequestListTestCase(APITestCase):
 
         ids = [item['id'] for item in response.data['results']]
         self.assertEqual(ids, [self.other_owner_request.id])
+
+    def test_unauthenticated_user_gets_401(self):
+        response = self.client.get(self.get_url())
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+class TenantInterestRequestListTestCase(APITestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user(
+            email='tirl_owner@example.com',
+            full_name='TIRL Owner',
+            password='testpass123',
+            phone_number='0599500001',
+            role='owner',
+        )
+        self.tenant = User.objects.create_user(
+            email='tirl_tenant@example.com',
+            full_name='TIRL Tenant',
+            password='testpass123',
+            phone_number='0599500002',
+            role='tenant',
+        )
+        self.other_tenant = User.objects.create_user(
+            email='tirl_tenant2@example.com',
+            full_name='TIRL Other Tenant',
+            password='testpass123',
+            phone_number='0599500003',
+            role='tenant',
+        )
+        self.property1 = Property.objects.create(
+            title='Property 1', description='d', price=Decimal('500'),
+            address='Gaza', owner=self.owner,
+        )
+        self.property2 = Property.objects.create(
+            title='Property 2', description='d', price=Decimal('600'),
+            address='Gaza', owner=self.owner,
+        )
+        self.pending_request = InterestRequest.objects.create(
+            tenant=self.tenant, property=self.property1, owner=self.owner,
+        )
+        self.approved_request = InterestRequest.objects.create(
+            tenant=self.tenant, property=self.property2, owner=self.owner,
+            status=InterestRequest.STATUS_APPROVED,
+        )
+        self.other_tenant_request = InterestRequest.objects.create(
+            tenant=self.other_tenant, property=self.property1, owner=self.owner,
+        )
+
+    def get_url(self):
+        return reverse('interest_requests:tenant-interest-request-list')
+
+    def test_tenant_sees_only_their_requests(self):
+        self.client.force_authenticate(user=self.tenant)
+        response = self.client.get(self.get_url())
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        ids = [item['id'] for item in response.data['results']]
+        self.assertIn(self.pending_request.id, ids)
+        self.assertIn(self.approved_request.id, ids)
+        self.assertNotIn(self.other_tenant_request.id, ids)
+        self.assertEqual(response.data['count'], 2)
+
+    def test_filter_by_pending(self):
+        self.client.force_authenticate(user=self.tenant)
+        response = self.client.get(self.get_url(), {'status': 'pending'})
+
+        ids = [item['id'] for item in response.data['results']]
+        self.assertEqual(ids, [self.pending_request.id])
+
+    def test_filter_by_approved(self):
+        self.client.force_authenticate(user=self.tenant)
+        response = self.client.get(self.get_url(), {'status': 'approved'})
+
+        ids = [item['id'] for item in response.data['results']]
+        self.assertEqual(ids, [self.approved_request.id])
+
+    def test_filter_by_rejected_empty(self):
+        self.client.force_authenticate(user=self.tenant)
+        response = self.client.get(self.get_url(), {'status': 'rejected'})
+
+        self.assertEqual(response.data['results'], [])
+        self.assertEqual(response.data['count'], 0)
+
+    def test_invalid_status_filter_rejected(self):
+        self.client.force_authenticate(user=self.tenant)
+        response = self.client.get(self.get_url(), {'status': 'closed'})
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_tenant_with_no_requests(self):
+        empty_tenant = User.objects.create_user(
+            email='tirl_tenant3@example.com',
+            full_name='TIRL Empty Tenant',
+            password='testpass123',
+            phone_number='0599500004',
+            role='tenant',
+        )
+        self.client.force_authenticate(user=empty_tenant)
+        response = self.client.get(self.get_url())
+
+        self.assertEqual(response.data['results'], [])
+        self.assertEqual(response.data['count'], 0)
+
+    def test_tenant_cannot_see_another_tenants_requests(self):
+        self.client.force_authenticate(user=self.other_tenant)
+        response = self.client.get(self.get_url())
+
+        ids = [item['id'] for item in response.data['results']]
+        self.assertEqual(ids, [self.other_tenant_request.id])
 
     def test_unauthenticated_user_gets_401(self):
         response = self.client.get(self.get_url())
